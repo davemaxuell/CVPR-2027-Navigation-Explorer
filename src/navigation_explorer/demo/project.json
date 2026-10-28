@@ -1,0 +1,36 @@
+{
+  "schema_version": "navigation-explorer/project-v1",
+  "name": "Navigation Explorer synthetic demo",
+  "runs": [
+    {
+      "id": "demo/discrete",
+      "adapter": "recording",
+      "model": "Example graph agent",
+      "dataset": "Synthetic rooms",
+      "split": "validation",
+      "environment": "discrete",
+      "episodes": "discrete.jsonl",
+      "note": "Synthetic example \u2014 no real dataset assets"
+    },
+    {
+      "id": "demo/continuous",
+      "adapter": "recording",
+      "model": "Example continuous agent",
+      "dataset": "Synthetic rooms",
+      "split": "validation",
+      "environment": "continuous",
+      "episodes": "continuous.jsonl",
+      "note": "Synthetic example \u2014 no simulator required"
+    },
+    {
+      "id": "demo/unscored",
+      "adapter": "recording",
+      "model": "Unscored recorder",
+      "dataset": "Synthetic observations",
+      "split": "inspection",
+      "environment": "continuous",
+      "episodes": "unscored.jsonl",
+      "note": "Example of missing evaluation and decision evidence"
+    }
+  ]
+}

@@ -1,0 +1,17 @@
+{
+  "schema_version": "navigation-explorer/project-v1",
+  "name": "Native recorded results",
+  "runs": [
+    {
+      "id": "etpnav/validation",
+      "adapter": "etpnav",
+      "model": "ETPNav",
+      "dataset": "R2R-CE",
+      "split": "validation",
+      "environment": "continuous",
+      "episodes": "../data/episodes.jsonl",
+      "connectivity": "../data/connectivity",
+      "note": "Native ETPNav explorer logs; other CE loggers should use the portable recording adapter."
+    }
+  ]
+}

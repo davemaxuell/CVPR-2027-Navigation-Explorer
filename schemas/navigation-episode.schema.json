@@ -1,0 +1,394 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:navigation-explorer:episode:v1",
+  "title": "Navigation Explorer portable episode v1",
+  "description": "Positions are Cartesian z-up meters. Additional relational checks (node references, duplicate IDs, ordering, probability sums and finite numbers) run in the importer. Missing evaluation values remain unknown.",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "instr_id",
+    "scene",
+    "trajectory"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "navigation-explorer/episode-v1"
+    },
+    "instr_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "scene": {
+      "type": "string",
+      "minLength": 1
+    },
+    "instruction": {
+      "type": "string"
+    },
+    "environment": {
+      "enum": [
+        "discrete",
+        "continuous"
+      ]
+    },
+    "coordinate_system": {
+      "enum": [
+        "cartesian_z_up_m",
+        "matterport_z_up_m"
+      ]
+    },
+    "camera_height_m": {
+      "type": "number",
+      "minimum": 0
+    },
+    "trajectory": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/point"
+      }
+    },
+    "reference_path": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/point"
+      }
+    },
+    "goal": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/point"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "graph": {
+      "type": "object",
+      "properties": {
+        "nodes": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/$defs/point"
+          }
+        },
+        "edges": {
+          "type": "array",
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "minItems": 2,
+            "maxItems": 2
+          }
+        }
+      }
+    },
+    "metrics": {
+      "type": "object",
+      "additionalProperties": {
+        "type": [
+          "number",
+          "null"
+        ]
+      },
+      "properties": {
+        "spl": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0,
+          "maximum": 1
+        },
+        "ndtw": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0,
+          "maximum": 1
+        },
+        "sdtw": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0,
+          "maximum": 1
+        },
+        "cls": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0,
+          "maximum": 1
+        },
+        "collisions": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0,
+          "maximum": 1
+        },
+        "sr": {
+          "enum": [
+            0,
+            1,
+            null
+          ]
+        },
+        "osr": {
+          "enum": [
+            0,
+            1,
+            null
+          ]
+        }
+      },
+      "propertyNames": {
+        "not": {
+          "enum": [
+            "backtrack_hops",
+            "backtrack_m",
+            "closest_dist",
+            "closest_hop",
+            "collision_count",
+            "ctrl_miss_max",
+            "ctrl_miss_mean",
+            "dense_closest_dist",
+            "dense_closest_track_index",
+            "distance_coverage_complete",
+            "failure_mode",
+            "first_goal_track_index",
+            "first_missed_subtask",
+            "first_nonbest",
+            "first_nonbest_conf",
+            "first_nonbest_subtask",
+            "first_nonbest_type",
+            "first_off_gt_hop",
+            "floors_visited",
+            "goal_visit_unsampled",
+            "instr_id",
+            "instr_words",
+            "instruction",
+            "lost_hop",
+            "max_visits",
+            "near_goal_hops",
+            "nonbest",
+            "oscillations",
+            "outcome",
+            "remote_jumps",
+            "revisit_events",
+            "revisited_nodes",
+            "sampling_note",
+            "scan",
+            "steplog",
+            "stop_place",
+            "stop_return",
+            "stuck",
+            "subtasks",
+            "subtasks_done"
+          ]
+        }
+      }
+    },
+    "evaluation": {
+      "type": "object",
+      "properties": {
+        "success_radius_m": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "exclusiveMinimum": 0
+        },
+        "distance_kind": {
+          "enum": [
+            "geodesic",
+            "euclidean",
+            "custom",
+            "unknown"
+          ]
+        }
+      }
+    },
+    "termination": {
+      "enum": [
+        "stop",
+        "step_limit",
+        "completed",
+        "unknown"
+      ]
+    },
+    "max_action_len": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "decisions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "frame",
+          "action"
+        ],
+        "properties": {
+          "frame": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "end_frame": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "action": {
+            "enum": [
+              "move",
+              "stop",
+              "observe",
+              "unknown"
+            ]
+          },
+          "target": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "$ref": "#/$defs/point"
+              }
+            ]
+          },
+          "forced": {
+            "type": "boolean"
+          },
+          "options": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "node_id": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "probability": {
+                  "type": [
+                    "number",
+                    "null"
+                  ],
+                  "minimum": 0,
+                  "maximum": 1
+                },
+                "score": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                }
+              },
+              "required": [
+                "node_id"
+              ],
+              "anyOf": [
+                {
+                  "required": [
+                    "probability"
+                  ]
+                },
+                {
+                  "required": [
+                    "score"
+                  ]
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    "image_provenance": {
+      "type": "object"
+    },
+    "metadata": {
+      "type": "object"
+    }
+  },
+  "$defs": {
+    "point": {
+      "type": "object",
+      "properties": {
+        "node_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "position": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 3,
+          "maxItems": 3
+        },
+        "heading": {
+          "type": "number"
+        },
+        "elevation": {
+          "type": "number"
+        },
+        "floor": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "height": {
+          "type": "number",
+          "minimum": 0
+        },
+        "region": {
+          "type": "string"
+        },
+        "distance_to_goal": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "time_s": {
+          "type": "number",
+          "minimum": 0
+        },
+        "image_prefix": {
+          "type": "string",
+          "minLength": 1
+        },
+        "rotation": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 9,
+          "maxItems": 9
+        }
+      },
+      "anyOf": [
+        {
+          "required": [
+            "node_id"
+          ]
+        },
+        {
+          "required": [
+            "position"
+          ]
+        }
+      ]
+    }
+  }
+}

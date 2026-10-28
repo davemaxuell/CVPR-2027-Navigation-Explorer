@@ -1,0 +1,257 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:navigation-explorer:project:v1",
+  "title": "Navigation Explorer project v1",
+  "description": "All paths resolve relative to the project manifest. JSON schemas check structural fields; loaders also check files, references and adapter-specific requirements.",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "runs"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "navigation-explorer/project-v1"
+    },
+    "name": {
+      "type": "string"
+    },
+    "runs": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "adapter",
+          "model",
+          "dataset",
+          "split",
+          "environment"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "model": {
+            "type": "string",
+            "minLength": 1
+          },
+          "dataset": {
+            "type": "string",
+            "minLength": 1
+          },
+          "split": {
+            "type": "string",
+            "minLength": 1
+          },
+          "predictions": {
+            "type": "string",
+            "minLength": 1
+          },
+          "annotations": {
+            "type": "string",
+            "minLength": 1
+          },
+          "connectivity": {
+            "type": "string",
+            "minLength": 1
+          },
+          "scans": {
+            "type": "string",
+            "minLength": 1
+          },
+          "steplog": {
+            "type": "string",
+            "minLength": 1
+          },
+          "subtasks": {
+            "type": "string",
+            "minLength": 1
+          },
+          "bboxes": {
+            "type": "string",
+            "minLength": 1
+          },
+          "views": {
+            "type": "string",
+            "minLength": 1
+          },
+          "episodes": {
+            "type": "string",
+            "minLength": 1
+          },
+          "images_dir": {
+            "type": "string",
+            "minLength": 1
+          },
+          "comparison_group": {
+            "type": "string",
+            "minLength": 1
+          },
+          "adapter": {
+            "enum": [
+              "recording",
+              "r2r",
+              "etpnav"
+            ]
+          },
+          "environment": {
+            "enum": [
+              "discrete",
+              "continuous"
+            ]
+          },
+          "note": {
+            "type": "string"
+          },
+          "coordinate_system": {
+            "type": "string",
+            "minLength": 1
+          },
+          "evaluation": {
+            "type": "object",
+            "properties": {
+              "success_radius_m": {
+                "type": [
+                  "number",
+                  "null"
+                ],
+                "exclusiveMinimum": 0
+              },
+              "distance_kind": {
+                "enum": [
+                  "geodesic",
+                  "euclidean",
+                  "custom",
+                  "unknown"
+                ]
+              }
+            }
+          },
+          "metadata": {
+            "anyOf": [
+              {
+                "type": "object"
+              },
+              {
+                "type": "string",
+                "minLength": 1
+              }
+            ]
+          },
+          "max_action_len": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "assets": {
+            "type": "object",
+            "properties": {
+              "meshes": {
+                "type": "string",
+                "minLength": 1
+              },
+              "meshes_hd": {
+                "type": "string",
+                "minLength": 1
+              },
+              "navmaps": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          },
+          "image_provenance": {
+            "anyOf": [
+              {
+                "type": "object"
+              },
+              {
+                "type": "string",
+                "minLength": 1
+              }
+            ]
+          },
+          "reference": {
+            "enum": [
+              "goal",
+              "route"
+            ]
+          },
+          "view_index": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "adapter": {
+                  "const": "recording"
+                }
+              }
+            },
+            "then": {
+              "required": [
+                "episodes"
+              ],
+              "properties": {
+                "coordinate_system": {
+                  "enum": [
+                    "cartesian_z_up_m",
+                    "matterport_z_up_m"
+                  ]
+                },
+                "metadata": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "adapter": {
+                  "const": "r2r"
+                }
+              }
+            },
+            "then": {
+              "required": [
+                "predictions",
+                "annotations",
+                "connectivity"
+              ],
+              "properties": {
+                "environment": {
+                  "const": "discrete"
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "adapter": {
+                  "const": "etpnav"
+                }
+              }
+            },
+            "then": {
+              "required": [
+                "episodes",
+                "connectivity"
+              ],
+              "properties": {
+                "environment": {
+                  "const": "continuous"
+                }
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+}

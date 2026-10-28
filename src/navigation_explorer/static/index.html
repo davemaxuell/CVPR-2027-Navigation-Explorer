@@ -1,0 +1,282 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Navigation Explorer</title>
+<link rel="preload" href="/static/ui/InterVariable.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/static/app.css">
+<link rel="stylesheet" href="/static/interface.css">
+<link rel="stylesheet" href="/static/layout.css">
+<link rel="stylesheet" href="/static/analysis.css">
+<link rel="stylesheet" href="/static/split.css">
+<link rel="stylesheet" href="/static/investigations.css">
+<script type="importmap">{ "imports": { "three": "/static/vendor/three.module.min.js" } }</script>
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">
+    <button id="toggleSide" class="icon-btn" title="Show / hide the episode list" aria-label="Toggle episode list" aria-expanded="true">☰</button>
+    <h1>Navigation explorer</h1>
+  </div>
+  <div class="run-controls">
+    <label class="field">Model <select id="model"></select></label>
+    <label class="field dataset-field">Dataset split <select id="split"></select></label>
+    <label class="field compare-field">Compare with <select id="compare"><option value="">none</option></select></label>
+  </div>
+  <div class="session-tools">
+    <div class="seg view-tabs" role="group" aria-label="Page">
+      <button id="viewEpisode" aria-pressed="true" title="Replay one episode">Episode</button>
+      <button id="viewSplit" aria-pressed="false" title="Statistics over the whole split; click a bar to filter the episode list">Split analysis</button>
+      <button id="viewInvestigation" aria-pressed="false" title="Find suspicious behavior and inspect the supporting evidence">Investigation</button>
+    </div>
+    <div class="gpu-switch" id="gpuSwitch" title="What-if branches re-run the model on the GPU. Off: nothing runs on the GPU; stored results stay visible.">
+      <label class="check"><input type="checkbox" id="optGPU" role="switch"> What-if · GPU</label>
+      <span id="gpuState" class="gpu-state" role="status" aria-live="polite">off</span>
+      <button id="gpuCancel" class="gpu-cancel" hidden title="Cancel the running and queued what-if jobs">Cancel</button>
+    </div>
+    <div class="epnav">
+      <span class="epnav-label">Episode</span>
+      <button id="prevEp" title="Previous episode in the list (K)" aria-label="Previous episode">◀</button>
+      <div id="epTitle" class="ep-title"></div>
+      <button id="nextEp" title="Next episode in the list (J)" aria-label="Next episode">▶</button>
+    </div>
+    <button id="theme" title="Toggle light/dark theme" aria-label="Toggle light/dark theme">Theme</button>
+  </div>
+  <div class="run-overview">
+    <div class="dataset-context" aria-label="Demonstration dataset"><span class="eyebrow">Dataset</span><strong id="datasetName">—</strong><span id="datasetDescription"></span></div>
+    <details class="run-provenance"><summary title="This viewer replays saved predictions and step logs">Recorded rollout</summary><div id="runDetails" class="run-details"></div></details>
+    <span class="eyebrow">Run overview</span><div id="runSummary" class="run-summary"></div>
+    <div class="layout-tools"><span class="resize-hint">Drag panel edges to resize</span><button id="resetLayout" title="Restore the default panel sizes">Reset layout</button></div>
+    <span class="keyboard-hint"><kbd>Space</kbd> play / pause <kbd>←</kbd><kbd>→</kbd> step</span>
+  </div>
+</header>
+
+<main class="layout" id="layout">
+  <!-- Episode browser -->
+  <aside class="panel sidebar" id="sidebar" aria-label="Episodes">
+    <div class="section-heading"><h2>Episodes</h2><div class="count" id="count"></div></div>
+    <div class="filters">
+      <input id="fText" type="search" placeholder="Search ID or instruction…" aria-label="Search episodes">
+      <div class="chips" id="outcomeChips" role="group" aria-label="Outcome filter"></div>
+      <details class="filter-disclosure">
+        <summary>More filters</summary>
+        <div class="filter-fields">
+          <label class="field">Failure mode <select id="fMode"><option value="">any</option></select></label>
+          <label class="field">First failed sub-task <select id="fSub"><option value="">any</option></select></label>
+          <label class="field">Scan <select id="fScan"><option value="">any</option></select></label>
+          <div class="row2">
+            <label class="field">Length &gt; (m) <input id="fLen" type="number" min="0" step="1" placeholder="0"></label>
+            <label class="field"><span id="fRevLabel">Revisited ≥</span> <input id="fRev" type="number" min="0" step="1" placeholder="0"></label>
+          </div>
+          <label class="check"><input type="checkbox" id="fRemote"> <span id="fRemoteLabel">Remote-frontier jump</span></label>
+          <label class="check"><input type="checkbox" id="fReturn"> Returned to an earlier node to stop</label>
+          <label class="check" id="fDiffWrap" hidden><input type="checkbox" id="fDiff"> Outcome differs from compared model</label>
+          <label class="field">Where it stopped <select id="fPlace"><option value="">any</option></select></label>
+          <label class="field" title="First decision whose choice was not the reference-best option">First non-best decision <select id="fFirst"><option value="">any</option></select></label>
+          <label class="check"><input type="checkbox" id="fConfident"> First non-best decision made ≥ 90% sure</label>
+          <label class="field">Tag <select id="fTag"><option value="">any</option></select></label>
+        </div>
+      </details>
+      <div class="sort-row">
+        <label class="field">Sort <select id="sort">
+          <option value="id">instruction id</option>
+          <option value="ne">nav error ↓</option>
+          <option value="tl">path length ↓</option>
+          <option value="revisited_nodes" data-env="discrete">revisits ↓</option>
+          <option value="remote_jumps" data-env="discrete">remote jumps ↓</option>
+          <option value="stuck" data-env="continuous">moves that went nowhere ↓</option>
+          <option value="ctrl_miss_max" data-env="continuous">worst waypoint miss ↓</option>
+          <option value="collision_count" data-env="continuous">collisions ↓</option>
+          <option value="ndtw">nDTW ↑</option>
+          <option value="first_nonbest">first non-best decision ↑</option>
+          <option value="first_nonbest_conf">confidence of first non-best ↓</option>
+          <option value="nonbest">non-best decisions ↓</option>
+        </select></label>
+      </div>
+      <div id="sliceChip" class="slice-chip" hidden></div>
+    </div>
+    <div class="table-wrap">
+      <table class="episodes">
+        <thead><tr><th></th><th>episode</th><th title="navigation error (m)">NE</th><th title="trajectory length (m)">TL</th><th title="sub-tasks completed">sub</th><th id="thLast" title="viewpoints visited ≥2×">↺</th></tr></thead>
+        <tbody id="rows"></tbody>
+      </table>
+    </div>
+    <div class="export">
+      <span>Export selection</span>
+      <button data-fmt="csv">CSV</button>
+      <button data-fmt="json">JSON</button>
+      <button data-fmt="jsonl" data-full="1" title="one episode per line, with frames and decisions">JSONL + steps</button>
+    </div>
+  </aside>
+
+  <!-- Stage: map, views, playback -->
+  <section class="stage" aria-label="Navigation">
+    <div class="panel mapbox">
+      <div class="map-heading">
+        <h2>Environment</h2>
+        <div class="map-actions" role="group" aria-label="Navigation display">
+          <label class="check" title="Show navigation nodes and paths. Turn off to keep only the start and goal markers on the map."><input id="optNodes" type="checkbox" checked> Pre-show nodes</label>
+          <label class="check cutaway-toggle only3d" title="Cut the building above the selected floor to see inside. Turn off to show the full height."><input type="checkbox" id="optCutaway" aria-controls="cut"> Cutaway</label>
+        </div>
+        <div class="seg map-tabs" role="tablist" aria-label="Map type">
+          <button id="tab3d" role="tab" aria-selected="true" aria-controls="map3d" aria-pressed="true">3D building</button>
+          <button id="tab2d" role="tab" aria-selected="false" aria-controls="map" aria-pressed="false">2D graph</button>
+        </div>
+      </div>
+      <div class="maptools">
+        <div class="tool-group floor-tools">
+          <span class="tool-label">Floor</span>
+          <div class="seg" id="floors" role="group" aria-label="Floor"></div>
+        </div>
+        <div class="tool-group only3d">
+          <span class="tool-label">Camera</span>
+          <div class="seg" id="camModes" role="group" aria-label="Camera">
+            <button data-cam="chase" title="Follow behind the agent">Chase</button>
+            <button data-cam="orbit" title="Orbit with the mouse; the view tracks the agent">Orbit</button>
+            <button data-cam="overview" title="Whole episode from above (double-click the 3D view)">Overview</button>
+          </div>
+        </div>
+        <span class="seg only2d" hidden><button id="fit" title="Fit the episode (double-click map, F)">Fit episode</button><button id="fitFloor">Fit floor</button></span>
+        <div class="camera-targets" role="group" aria-label="Center camera">
+          <button id="centerAgent" title="Return the camera to the agent at the current playback frame">Center agent</button>
+          <button id="jumpGoal" disabled aria-pressed="false" title="Pause playback and inspect the goal's 360° panorama without moving the agent">Jump to goal</button>
+        </div>
+        <details class="map-settings">
+          <summary>Display</summary>
+          <div class="settings-content">
+            <p class="eyebrow">Display options</p>
+            <label class="check" title="Show secondary room and score labels. Turn off to focus on the selected action and route."><input type="checkbox" id="optLabels"> All map labels</label>
+            <button id="analysisView" type="button">2D analysis view</button>
+            <label class="check"><input type="checkbox" id="optViews" checked> Camera panels</label>
+            <label class="field inline only3d">Cut height <input id="cut" type="range" min="0.6" max="3" step="0.1" value="1.3" disabled> <span id="cutLabel">1.3 m</span></label>
+            <label class="check only3d"><input type="checkbox" id="optMesh" checked> Building mesh</label>
+            <label class="check only3d" title="Load the shown floor at 5-10x the detail of the whole-building mesh (10-25 MB per floor)"><input type="checkbox" id="optHD" checked> High-detail floor</label>
+            <label class="check only3d" title="Paint the panorama photos of the agent's viewpoint onto the surfaces it can see"><input type="checkbox" id="optPhoto" checked> Photo at agent</label>
+            <label class="check"><input type="checkbox" id="optScores" checked> Action scores</label>
+            <label class="check"><input type="checkbox" id="optStop"> Stop probabilities</label>
+            <label class="check only2d" hidden><input type="checkbox" id="optRooms" checked> Room labels</label>
+            <label class="check only2d" hidden><input type="checkbox" id="optFuture" checked> Full path preview</label>
+            <label class="check only2d" hidden title="Where an agent can stand (the Habitat navmesh), drawn under the map"><input type="checkbox" id="optNavmap" checked> Navigable area</label>
+          </div>
+        </details>
+      </div>
+      <div class="route-key" role="group" aria-label="Visible routes">
+        <label class="check"><input id="optModelRoute" type="checkbox" checked><i class="route-swatch model-route"></i>Model</label>
+        <label class="check" id="referenceRouteWrap" title="Annotated ground-truth route used for evaluation"><input id="optReferenceRoute" type="checkbox" checked><i class="route-swatch reference-route"></i>Reference</label>
+        <label class="check" id="compareRouteWrap"><input id="optCompareRoute" type="checkbox" checked><i class="route-swatch comparison-route"></i><span id="compareRouteLabel">Comparison</span></label>
+        <span id="cameraContext" class="camera-context">Camera follows agent</span>
+      </div>
+      <div class="mapwrap" id="mapwrap">
+        <div id="map3d" class="map3d"></div>
+        <svg id="map" role="img" aria-label="Top-down connectivity graph with ground-truth and predicted paths" hidden></svg>
+        <div class="tooltip" id="tip" hidden></div>
+        <div class="empty" id="mapEmpty">Select an episode</div>
+        <div class="status3d" id="status3d" hidden></div>
+        <details class="map-legend">
+          <summary>Map legend</summary>
+          <div class="legend" id="legend" aria-label="Map legend"></div>
+        </details>
+      </div>
+    </div>
+
+    <p id="assetNotice" class="camera-provenance" role="status" hidden></p>
+    <div class="views">
+      <figure class="panel view front">
+        <figcaption><span class="view-title" id="fpvTitle">Agent view</span><span class="hint" id="fpvHint"></span></figcaption>
+        <p id="cameraProvenance" class="camera-provenance" hidden></p>
+        <div class="viewbox">
+          <canvas id="fpv" aria-label="Front view at the agent's heading; drag to look around"></canvas>
+          <svg id="fpvSvg" class="overlay"></svg>
+          <div class="view-msg" id="fpvMsg"></div>
+          <button id="fpvFollow" class="fpv-follow" hidden>↺ follow agent</button>
+        </div>
+      </figure>
+      <figure class="panel view pano">
+        <figcaption><span class="view-title" id="panoTitle">360° panorama</span><span class="hint" id="panoHint">Click to look around</span><button id="returnAgent" hidden title="Restore the agent's view at the paused frame">Return to agent</button></figcaption>
+        <div class="viewbox">
+          <canvas id="pano" aria-label="360 degree panorama at the current viewpoint"></canvas>
+          <svg id="panoSvg" class="overlay"></svg>
+          <div class="view-msg" id="panoMsg"></div>
+        </div>
+        <div class="vlegend"><span class="progress-legend"><i class="k-cand"></i>navigable</span><span class="progress-legend"><i class="k-next"></i>next hop</span><span class="progress-legend" title="Reference action derived from the ground-truth goal"><i class="k-best"></i>reference-best</span><span id="viewGoalLegend"><i class="k-goal"></i>reference goal</span><span id="goalPreviewStatus" role="status" hidden></span></div>
+      </figure>
+    </div>
+
+    <div class="panel playback">
+      <div class="investigation-navigation" id="investigationNavigation" hidden><span id="investigationNavigationLabel"></span><button type="button" id="returnInvestigationQueue">Return to queue</button></div>
+      <div class="buttons">
+        <div class="transport" role="group" aria-label="Playback controls">
+        <button id="bStart" title="First frame (Home)" aria-label="First frame">⏮</button>
+        <button id="bPrevD" title="Previous decision (Shift+←)" aria-label="Previous decision">⏪</button>
+        <button id="bPrev" title="Previous hop (←)" aria-label="Previous hop">◀</button>
+        <button id="bPlay" class="primary" title="Play / pause (Space)" aria-label="Play">▶</button>
+        <button id="bNext" title="Next hop (→)" aria-label="Next hop">▶︎|</button>
+        <button id="bNextD" title="Next decision (Shift+→)" aria-label="Next decision">⏩</button>
+        <button id="bEnd" title="Last frame (End)" aria-label="Last frame">⏭</button>
+        </div>
+        <div class="playback-settings">
+        <label class="field inline">Speed <input id="speed" type="range" min="0.25" max="3" step="0.25" value="1"> <span id="speedLabel">1 s/step</span></label>
+        <label class="field inline">Decision <input id="jump" type="number" min="0" value="0"></label>
+        </div>
+      </div>
+      <div class="auto-next">
+        <label class="check" title="Play the next episode in the filtered list after a 4-second pause, looping back to the beginning."><input id="optAutoNext" type="checkbox"> Auto-next episode</label>
+        <span id="autoNextStatus" class="auto-next-status" role="status" aria-live="polite" aria-atomic="true">4 s pause between episodes</span>
+      </div>
+      <details class="episode-summary" open>
+        <summary>Episode summary <span>Full recorded rollout</span></summary>
+        <p id="episodeSummary"></p>
+      </details>
+      <div id="eventShortcuts" class="event-shortcuts" role="group" aria-label="Key episode events"></div>
+      <p id="eventContext" class="event-context"></p>
+      <div class="timeline-heading"><span>Distance to goal</span><span id="frameLabel" class="frame-label"></span></div>
+      <svg id="timeline" role="img" aria-label="Distance to goal, sub-task progress and model focus over the episode; click to seek"></svg>
+      <label class="frame-scrubber">Frame <input id="frameSeek" type="range" min="0" max="0" value="0" aria-label="Playback frame"><output id="frameSeekLabel" for="frameSeek">0 / 0</output></label>
+    </div>
+  </section>
+
+  <!-- Details -->
+  <aside class="details" aria-label="Episode details">
+    <section class="card instruction-card">
+      <div class="section-heading"><h2>Main instruction</h2></div>
+      <p class="main-instruction"><strong id="mainInstruction"></strong></p>
+      <div class="subinstructions-heading"><h3 id="subInstructionsHeading">Sub-instructions</h3><label class="check"><input id="optAllSteps" type="checkbox"> All steps</label></div>
+      <p id="subtaskProgress" class="subtask-progress"></p>
+      <ol class="subtasks" id="subtasks" aria-labelledby="subInstructionsHeading"></ol>
+      <details class="instruction-note">
+        <summary>About sub-tasks &amp; attention</summary>
+        <p class="hint" id="subHint"></p>
+        <p class="note" id="attnHint"></p>
+      </details>
+    </section>
+    <section class="card" id="investigationCard" aria-label="Investigation evidence" hidden></section>
+    <section class="card" id="decisionCard"></section>
+    <section class="card" id="outcomeCard" aria-label="Current position and final episode result"></section>
+    <section class="card" id="comparisonCard" aria-label="Model comparison" hidden></section>
+    <section class="card notes-card" id="notesCard" aria-labelledby="notesHeading">
+      <div class="section-heading"><h2 id="notesHeading">Tags &amp; notes</h2><span id="notesStatus" class="hint" role="status" aria-live="polite"></span></div>
+      <div id="tagChips" class="tag-chips" role="group" aria-label="Tags"></div>
+      <div class="tag-add"><input id="tagInput" list="tagVocabulary" placeholder="Add a tag…" aria-label="Add a tag" maxlength="40"><datalist id="tagVocabulary"></datalist><button id="tagAdd">Add</button></div>
+      <textarea id="noteText" rows="3" maxlength="4000" placeholder="Notes on this episode (saved automatically)" aria-label="Episode notes"></textarea>
+    </section>
+    <details class="card" id="diagWrap">
+      <summary><h2>Episode diagnostics</h2><span class="hint" id="diagSummary"></span></summary>
+      <div id="diagCard"></div>
+    </details>
+  </aside>
+
+  <section class="split-page" id="splitPage" aria-label="Split analysis" hidden>
+    <div class="split-head">
+      <h2>Split analysis</h2>
+      <label class="check" title="Restrict the statistics to the episodes the list filters keep (ignoring a selected slice)"><input type="checkbox" id="splitUseFilters"> Only episodes matching the list filters</label>
+      <span class="hint">Click a bar, cell or count to list those episodes on the left; open one to replay it.</span>
+    </div>
+    <div id="splitBody" class="split-body"></div>
+  </section>
+  <section class="investigation-page" id="investigationPage" aria-label="Investigation queue" hidden></section>
+</main>
+<script type="module" src="/static/layout.js"></script>
+<script type="module" src="/static/app.js"></script>
+</body>
+</html>

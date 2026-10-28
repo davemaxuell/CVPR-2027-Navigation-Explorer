@@ -1,0 +1,96 @@
+/* Layout controls are independent of the navigation and rendering modules. */
+.layout-tools { display: flex; align-items: center; gap: 10px; margin-left: auto; white-space: nowrap; }
+.resize-hint { font-size: 10px; color: var(--text-muted); }
+#resetLayout { min-height: 24px; padding: 2px 7px; font-size: 10px; background: transparent; }
+.run-overview .keyboard-hint { margin-left: 0; }
+.resize-help { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+
+.resize-enabled { position: relative; --resize-edge: 14px; }
+.resize-enabled .stage { overflow: auto; overflow-x: hidden; scrollbar-gutter: stable; padding-bottom: 2px; container: navigation / inline-size; }
+.resize-enabled .details { container: episode-details / inline-size; }
+.resize-enabled .views { position: relative; height: auto; align-items: flex-start; }
+.resize-enabled .view { padding-bottom: var(--resize-edge); min-width: 0; }
+.resize-enabled .view.front { width: var(--front-width, calc((var(--view-h) - 32px) * 4 / 3)); height: var(--view-h); }
+.resize-enabled .view.pano { height: var(--view-h); flex: 1 1 0; }
+.resizable-panel { position: relative; }
+.resize-enabled .mapbox { padding-bottom: var(--resize-edge); }
+.resize-enabled .mapbox[data-sized] { flex: none; }
+.resize-enabled .playback { padding-bottom: calc(var(--resize-edge) + 2px); }
+.resize-enabled .playback #timeline { flex: none; }
+.resize-enabled .sidebar[data-sized] { align-self: start; }
+.resize-enabled .sidebar > .section-heading { flex: none; }
+.resize-enabled .sidebar .filters { flex: 0 1 auto; min-height: 85px; }
+.resize-enabled .sidebar .export { padding-bottom: calc(var(--resize-edge) + 3px); }
+.resize-shell { position: relative; min-width: 0; flex: none; }
+.resize-shell > .card { margin: 0; padding-bottom: calc(var(--resize-edge) + 7px); }
+.resize-shell[data-sized] > .card, .resize-shell[data-sized] > .playback { height: 100%; overflow: auto; overscroll-behavior: contain; }
+.resize-shell[data-sized] > #outcomeCard > * { flex-shrink: 0; }
+.resize-shell:has(> #diagWrap:not([open])) { height: auto !important; }
+.resize-shell:has(> #diagWrap:not([open])) > .resize-handle { display: none; }
+.resize-enabled .tool-group { max-width: 100%; }
+.resize-enabled #floors { flex-wrap: wrap; min-width: 0; }
+.resize-enabled .view-title { flex: none; }
+.resize-enabled .view figcaption .hint { min-width: 0; }
+.resize-enabled .subtasks li { grid-template-columns: 18px minmax(0, 1fr); }
+.resize-shell > .card { overflow-wrap: anywhere; }
+
+/* A visible grip identifies each draggable edge without covering the content. */
+.resize-handle { position: absolute; z-index: 8; display: flex; align-items: center; justify-content: center; touch-action: none; user-select: none; border-radius: 5px; outline: none; }
+.resize-handle::after { content: ''; flex: none; background: var(--text-muted); opacity: .45; border-radius: 3px; transition: background-color 120ms ease, opacity 120ms ease; }
+.resize-handle:hover::after, .resize-handle:focus-visible::after, .resize-handle.is-resizing::after { background: var(--ui-accent); opacity: 1; }
+.resize-handle:hover, .resize-handle:focus-visible, .resize-handle.is-resizing { background: var(--sel-bg); }
+.resize-handle:focus-visible { outline: 2px solid var(--focus); outline-offset: -2px; }
+.resize-height { height: var(--resize-edge); left: 1px; right: 1px; bottom: 1px; cursor: ns-resize; background: var(--surface-1); border-radius: 0 0 10px 10px; }
+.resize-height::after { width: 34px; height: 3px; }
+.resize-width { width: var(--resize-edge); cursor: ew-resize; }
+.resize-width::after { width: 3px; height: 32px; }
+.resize-front { top: 0; bottom: 0; }
+.resize-readout { position: fixed; z-index: 100; pointer-events: none; padding: 6px 10px; border: 1px solid var(--border); border-radius: 7px; background: var(--surface-1); color: var(--text-primary); box-shadow: 0 3px 12px rgb(0 0 0 / .1); font-size: 11px; font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.noside > .resize-sidebar { display: none; }
+html[data-layout-resizing='x'], html[data-layout-resizing='x'] * { cursor: ew-resize !important; user-select: none !important; }
+html[data-layout-resizing='y'], html[data-layout-resizing='y'] * { cursor: ns-resize !important; user-select: none !important; }
+html[data-layout-resizing] .stage, html[data-layout-resizing] .details, html[data-layout-resizing] body { overflow-anchor: none; }
+
+/* Respond to the panel width, including when the window itself stays wide. */
+@container navigation (max-width: 520px) {
+  .resize-enabled .views { flex-direction: column; align-items: stretch; }
+  .resize-enabled .view.front { width: 100%; height: 230px; }
+  .resize-enabled .view.pano { flex: none; width: 100%; height: 185px; }
+  .resize-enabled .resize-front { display: none; }
+  .map-actions { order: 1; flex-basis: 100%; margin-left: 0; justify-content: space-between; }
+  .transport { width: 100%; }
+  .transport button { flex: 1; min-width: 0; width: auto; }
+  .transport #bPlay { flex: 1.8; min-width: 70px; padding-inline: 8px; }
+  .playback-settings { width: 100%; flex-wrap: wrap; justify-content: space-between; gap: 6px 12px; }
+  .vlegend { justify-content: flex-start; }
+}
+@container episode-details (max-width: 300px) {
+  .metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (min-width: 761px) and (max-width: 1100px) {
+  .resize-enabled, .resize-enabled.noside { grid-template-columns: minmax(0, 1fr) var(--details-width, 310px); }
+  .resize-enabled > .resize-sidebar { display: none; }
+  .resize-hint { display: none; }
+}
+@media (max-width: 760px) {
+  .run-overview { flex-wrap: wrap; gap: 6px 12px; }
+  .run-summary { flex-basis: 100%; }
+  .layout-tools { width: 100%; justify-content: space-between; margin-left: 0; }
+  .resize-enabled .stage { overflow: visible; scrollbar-gutter: auto; }
+  .resize-enabled > .resize-width, .resize-enabled .resize-front { display: none; }
+  .resize-enabled .views { align-items: stretch; }
+  .resize-enabled .view.front { width: 100%; height: 265px; }
+  .resize-enabled .view.pano { height: 185px; flex: none; }
+  .resize-shell { width: 100%; }
+  .resize-shell[data-panel='instruction'] { order: 0; }
+  .resize-shell[data-panel='outcome'] { order: 2; }
+  .resize-shell[data-panel='decision'] { order: 3; }
+  .resize-shell[data-panel='diagnostics'] { order: 4; }
+}
+@media (pointer: coarse) {
+  .resize-enabled { --resize-edge: 22px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .resize-handle::after { transition: none; }
+}

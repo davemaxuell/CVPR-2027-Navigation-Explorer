@@ -1,0 +1,37 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "navigation-explorer"
+version = "0.1.0"
+description = "Visualize and replay navigation agents in 2D and 3D across discrete and continuous environments"
+readme = "README.md"
+requires-python = ">=3.10"
+license = {file = "LICENSE"}
+authors = [{name = "NavVEM authors"}]
+dependencies = []
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Intended Audience :: Science/Research",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3",
+  "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+
+[project.urls]
+Repository = "https://github.com/davemaxuell/CVPR-2027-Navigation-Explorer"
+Documentation = "https://github.com/davemaxuell/CVPR-2027-Navigation-Explorer#readme"
+Issues = "https://github.com/davemaxuell/CVPR-2027-Navigation-Explorer/issues"
+
+[project.optional-dependencies]
+meshes = ["numpy>=1.23"]
+
+[project.scripts]
+navigation-explorer = "navigation_explorer.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+navigation_explorer = ["static/*", "static/ui/*", "static/vendor/*", "demo/*", "demo/**/*"]

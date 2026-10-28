@@ -1,0 +1,18 @@
+{
+  "schema_version": "navigation-explorer/project-v1",
+  "name": "Native recorded results",
+  "runs": [
+    {
+      "id": "my-model/validation",
+      "adapter": "r2r",
+      "model": "My graph navigator",
+      "dataset": "R2R",
+      "split": "validation",
+      "environment": "discrete",
+      "predictions": "../data/predictions.json",
+      "annotations": "../data/R2R_val_unseen.json",
+      "connectivity": "../data/connectivity",
+      "note": "Change every path to your own external files before loading."
+    }
+  ]
+}

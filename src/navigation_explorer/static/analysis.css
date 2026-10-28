@@ -1,0 +1,166 @@
+/* Analysis hierarchy and controls. The saved rollout is the source of every result. */
+:root { --compare: #8755ad; }
+:root[data-theme='dark'] { --compare: #c4a1e3; }
+h2 { font-size: 13px; }
+abbr[title] { text-decoration: underline dotted; text-underline-offset: 3px; cursor: help; }
+.check, .field, .map-actions .check, .seg button, #jumpGoal, .map-settings > summary,
+.map-legend > summary, .map-legend .legend, .auto-next .check, .auto-next-status,
+.frame-label, .timeline-heading, .playback-settings .field.inline, #speedLabel,
+.filter-disclosure > summary, .sort-row select, .filter-fields select, .export button,
+.run-summary, .resize-hint, #resetLayout { font-size: 11px; }
+.hint, .note, .diag, #diagSummary, .instruction-note .hint, .instruction-note .note { font-size: 12px; }
+.note { line-height: 1.5; }
+button:disabled { cursor: default; }
+
+/* Recording context is visible without competing with episode controls. */
+.run-provenance { position: relative; flex: none; z-index: 20; font-size: 11px; }
+.run-provenance > summary { padding: 4px 9px; border: 1px solid var(--border); border-radius: 20px; color: var(--text-secondary); font-weight: 600; }
+.run-provenance > summary::before { content: ''; display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--text-muted); margin-right: 6px; }
+.run-details { position: absolute; top: calc(100% + 8px); left: 0; width: 330px; max-width: calc(100vw - 32px); padding: 16px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface-1); box-shadow: 0 10px 30px rgb(0 0 0 / .12); font-size: 12px; }
+.run-details p { color: var(--text-secondary); margin: 8px 0 12px; }
+.run-details dl { display: grid; gap: 4px; margin: 0; }
+.run-details dt { color: var(--text-muted); font-size: 11px; margin-top: 7px; }
+.run-details dd { margin: 0; overflow-wrap: anywhere; }
+table.episodes, table.episodes th { font-size: 11px; }
+.episode-pick { padding: 3px 0; min-height: 24px; border: 0; background: transparent; color: inherit; font-size: 11px; font-variant-numeric: tabular-nums; }
+.episode-pick:focus-visible { outline-offset: 1px; }
+
+/* Keep route identity and camera destinations within reach of the map. */
+.camera-targets { display: flex; gap: 5px; flex-wrap: wrap; }
+.camera-targets button { min-height: 29px; padding: 4px 8px; font-size: 11px; }
+.route-key { display: flex; flex-wrap: wrap; align-items: center; gap: 5px 12px; padding: 7px 12px; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); flex: none; }
+.route-key .check { gap: 5px; font-size: 11px; }
+.route-key input { width: 12px; height: 12px; }
+.route-key label:has(input:disabled) { opacity: .5; }
+.route-swatch { width: 17px; height: 0; border-top: 3px solid var(--model); display: inline-block; flex: none; }
+.route-swatch.reference-route { border-color: var(--gt); border-top-style: dashed; }
+.route-swatch.comparison-route { border-color: var(--compare); border-top-style: dotted; }
+.camera-context { font-size: 11px; color: var(--text-muted); margin-left: auto; }
+#analysisView { width: 100%; }
+.l3 { font-size: 11px; }
+.l3.inspection { border-color: var(--focus); font-weight: 600; }
+.l3.model-branch { margin-top: -24px; }
+.l3.comparison-branch { margin-top: 24px; }
+#map:not(.all-labels) .m-edge { opacity: .32; }
+#map:not(.all-labels) .m-node { opacity: .5; }
+.m-inspection { fill: none; stroke-width: 2.5; stroke-dasharray: 4 3; }
+.m-inspection-leader { stroke-width: 1; opacity: .65; }
+.m-divergence { fill: none; stroke: var(--model); stroke-width: 6; stroke-linecap: round; opacity: .8; }
+.m-divergence.comparison { stroke: var(--compare); stroke-dasharray: 5 3; }
+.inspection-label { font-size: 12px; font-weight: 650; }
+.vlegend, .view figcaption .hint { font-size: 11px; }
+.views[data-preview='goal'] .view { border-color: color-mix(in srgb, var(--goal) 60%, var(--border)); }
+.views[data-preview='goal'] .view.pano figcaption { height: auto; min-height: 32px; flex-wrap: wrap; }
+#returnAgent { margin-left: auto; min-height: 27px; padding: 3px 7px; font-size: 11px; white-space: nowrap; }
+#goalPreviewStatus { white-space: normal; line-height: 1.5; }
+.views[data-preview='goal'] .vlegend { justify-content: flex-start; }
+#panoMsg { padding: 8px; text-align: center; font-size: 12px; }
+
+/* Active instruction first; all steps remain scrollable and the whole card can be enlarged. */
+.instruction-card { display: flex; flex-direction: column; max-height: 355px; }
+.instruction-card > .section-heading, .subinstructions-heading, .subtask-progress { flex: none; }
+.main-instruction { flex: 0 1 auto; min-height: 44px; max-height: 104px; overflow: auto; margin: 9px 0 12px; padding-right: 4px; font-size: 14px; line-height: 1.6; }
+.main-instruction strong { font-weight: 700; }
+.subinstructions-heading { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 5px 8px; padding-top: 9px; letter-spacing: 0; text-transform: none; }
+.subinstructions-heading h3 { margin: 0; font-size: 12px; font-weight: 600; }
+.subinstructions-heading .check { font-weight: 400; }
+.subtask-progress { font-size: 11px; color: var(--text-muted); margin: 5px 0; }
+.subtasks { flex: 1 1 auto; min-height: 74px; overflow: auto; margin-top: 3px; padding: 2px; gap: 6px; }
+.resize-enabled .subtasks li { display: block; padding: 0; cursor: default; }
+.subtasks:not(.show-all) li:not(.now) { display: none; }
+.subtask-button { display: grid; grid-template-columns: 18px minmax(0, 1fr); gap: 4px 7px; width: 100%; text-align: left; align-items: start; padding: 8px 6px; border: 0; background: transparent; border-radius: 6px; color: var(--text-primary); }
+.subtask-button:disabled { opacity: 1; }
+.subtask-button:focus-visible { outline-offset: -2px; }
+.subtasks .txt { font-size: 13px; line-height: 1.65; }
+.subtasks .meta { grid-column: 2; gap: 2px; align-items: flex-start; flex-direction: column; font-size: 11px; }
+.subtasks .st.current { background: var(--model); color: white; }
+.subtasks .st.pending { background: var(--ui-soft); color: var(--text-secondary); border: 1px solid var(--border); }
+.attention-share { color: var(--text-secondary); font-weight: 400; }
+.instruction-note { flex: none; margin-top: 8px; padding-top: 5px; }
+.instruction-note > summary { font-size: 11px; }
+.instruction-note[open] { max-height: 140px; overflow: auto; }
+.resize-shell[data-sized] > .instruction-card { max-height: none; }
+.resize-shell[data-sized] > .instruction-card .subtasks { min-height: 74px; }
+
+/* The logged choice is immediately below the instruction. Secondary options scroll. */
+.decision-heading { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 6px; }
+.evidence-tag { font-size: 10px; color: var(--text-secondary); border: 1px solid var(--border); padding: 2px 6px; border-radius: 4px; }
+.decision-action { margin: 9px 0 0; font-size: 13px; line-height: 1.5; font-weight: 650; color: var(--text-primary); }
+.fuse { margin: 10px 0 5px; }
+.fuse-lbl { font-size: 11px; }
+.score-caption { margin: 10px 0 4px; font-size: 11px; color: var(--text-secondary); }
+.decision-options { max-height: 198px; overflow: auto; padding: 1px 3px 1px 1px; }
+.dbar { grid-template-columns: minmax(70px, 1.3fr) minmax(25px, 1fr) 43px; margin: 4px 0; padding: 5px 0; gap: 3px 7px; }
+.dbar .lbl { font-size: 11px; min-height: 25px; padding: 2px 3px; text-align: left; background: transparent; border: 1px solid transparent; }
+.dbar .lbl:hover, .dbar .lbl:focus-visible, .dbar .lbl[aria-pressed='true'] { border-color: var(--model); color: var(--text-primary); }
+.dbar .lbl:focus-visible { outline-offset: 0; }
+.dbar .val { font-size: 12px; font-weight: 600; }
+.dbar .marks { grid-column: 1 / -1; font-size: 11px; line-height: 1.5; padding-left: 4px; }
+.dbar.chosen-option { border-left: 3px solid var(--model); padding-left: 5px; }
+.reference-note { font-size: 11px; color: var(--text-muted); margin: 7px 0 0; }
+.resize-shell[data-sized] .decision-options { max-height: none; }
+
+/* Current state is compact; retrospective metrics have an explicit label. */
+.position-strip { display: flex; flex-wrap: wrap; gap: 5px 10px; align-items: center; margin-top: 9px; }
+.position-strip strong { font-size: 25px; line-height: 1.2; font-weight: 650; letter-spacing: -.6px; }
+.position-strip > span { color: var(--text-secondary); font-size: 11px; line-height: 1.55; }
+.position-context { font-size: 11px; margin: 6px 0; color: var(--text-secondary); }
+.position-tags { display: flex; flex-wrap: wrap; gap: 4px; }
+.tag { font-size: 11px; }
+.final-outcome { border-top: 1px solid var(--border); margin-top: 10px; padding-top: 10px; }
+.final-outcome > summary { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px; font-size: 12px; }
+.final-outcome > summary strong { display: inline-flex; align-items: center; gap: 5px; font-weight: 600; }
+.final-outcome > summary > span::after { content: ' ▾'; color: var(--text-muted); }
+.metrics div { font-size: 11px; }
+.metrics b { font-size: 14px; }
+.resize-shell:has(> [hidden]) { display: none; }
+.comparison-table-wrap { overflow-x: auto; margin-top: 8px; }
+.comparison-table { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 11px; font-variant-numeric: tabular-nums; }
+.comparison-table th, .comparison-table td { padding: 7px 3px; border-bottom: 1px solid var(--border); text-align: right; vertical-align: top; overflow-wrap: normal; }
+.comparison-table th:first-child { text-align: left; width: 27%; color: var(--text-secondary); font-weight: 500; }
+.comparison-table th:last-child { width: 20%; }
+.comparison-table thead th { font-weight: 600; }
+.comparison-table thead th:nth-child(2) { color: var(--model); }
+.comparison-table thead th:nth-child(3) { color: var(--compare); }
+.comparison-table .st { width: 14px; height: 14px; margin-right: 2px; font-size: 9px; }
+.comparison-delta { margin: 6px 0 10px; color: var(--text-muted); font-size: 11px; }
+#firstDivergence { width: 100%; text-align: left; font-size: 11px; min-height: 32px; }
+
+/* Failure analysis is adjacent to playback, with native keyboard seeking. */
+.episode-summary { border-top: 1px solid var(--border); padding-top: 8px; margin-top: 8px; }
+.episode-summary > summary { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 5px; font-size: 12px; font-weight: 600; }
+.episode-summary > summary::before { content: '▾'; color: var(--text-muted); }
+.episode-summary:not([open]) > summary::before { content: '▸'; }
+.episode-summary > summary > span { margin-left: auto; font-weight: 400; color: var(--text-muted); font-size: 11px; }
+#episodeSummary { font-size: 12px; line-height: 1.6; margin: 6px 0 0; }
+.event-shortcuts { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 9px; }
+.event-shortcuts button { display: flex; align-items: center; gap: 6px; min-height: 28px; font-size: 11px; padding: 4px 7px; }
+.event-shortcuts button span { font-size: 10px; color: var(--text-muted); white-space: nowrap; }
+.event-shortcuts button[aria-pressed='true'] { border-color: var(--model); }
+.event-context { font-size: 11px; line-height: 1.5; color: var(--text-secondary); margin: 7px 0 0; min-height: 33px; }
+.t-axis, .t-subtxt { font-size: 11px; }
+.frame-scrubber { display: flex; align-items: center; gap: 9px; font-size: 11px; margin: 5px 0 1px; color: var(--text-secondary); }
+.frame-scrubber input { flex: 1; min-width: 0; }
+.frame-scrubber output { min-width: 50px; text-align: right; font-variant-numeric: tabular-nums; }
+
+@container episode-details (max-width: 300px) {
+  .card { padding-inline: 10px; }
+  .comparison-table { font-size: 10.5px; }
+  .decision-heading h2 { font-size: 12px; }
+}
+@container navigation (max-width: 520px) {
+  .camera-context { width: 100%; margin-left: 0; }
+  .route-key { gap: 6px 10px; }
+  .event-shortcuts button { flex: 1 1 auto; justify-content: space-between; }
+}
+@media (max-width: 760px) {
+  .resize-shell[data-panel='decision'] { order: 2; }
+  .resize-shell[data-panel='outcome'] { order: 3; }
+  .resize-shell[data-panel='comparison'] { order: 4; }
+  .resize-shell[data-panel='diagnostics'] { order: 5; }
+  .sidebar { order: 6; }
+  .run-provenance { position: static; }
+  .run-details { position: absolute; top: auto; left: 16px; margin-top: 8px; }
+  .subtask-button { min-height: 44px; }
+  .timeline-heading { flex-wrap: wrap; }
+}
