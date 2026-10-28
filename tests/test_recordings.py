@@ -192,7 +192,8 @@ class PortableRecordingTests(unittest.TestCase):
         self.assertEqual(len(case['images'][0]['urls']), 6)
         self.assertIn('model%2Fvalidation/episode%2Fframe_0.jpg', case['images'][0]['urls'][0])
         self.assertFalse(case['provenance']['images']['independently_verified'])
-        self.assertEqual(run.image_file('episode/frame_0.jpg'), image)
+        # Asset paths are canonical, including Windows short-name temp directories.
+        self.assertEqual(run.image_file('episode/frame_0.jpg'), image.resolve())
         self.assertIsNone(run.image_file('../episodes.jsonl'))
         self.assertIsNone(run.image_file('/etc/passwd'))
         self.assertIsNone(run.image_file('frame.png'))

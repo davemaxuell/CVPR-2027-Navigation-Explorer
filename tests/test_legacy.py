@@ -177,7 +177,8 @@ class LegacyAdapterTests(unittest.TestCase):
         run = load_legacy_run(spec, self.root, self.state)
         sky = run.episode('custom-episode')['graph']['nodes']['n0']['sky']
         self.assertEqual(sky, '/api/legacy-view/CE%20model%20%2F%20custom%20split/7/n0')
-        self.assertEqual(run.view_file('7', 'n0', 0), self.root / 'views/7/n0_0.jpg')
+        # Asset paths are canonical, including Windows short-name temp directories.
+        self.assertEqual(run.view_file('7', 'n0', 0), (self.root / 'views/7/n0_0.jpg').resolve())
         with self.assertRaisesRegex(ValueError, 'identifier'):
             run.view_file('../outside', 'n0', 0)
         try:
